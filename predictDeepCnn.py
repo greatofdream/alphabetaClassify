@@ -12,22 +12,23 @@ class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
         self.conv1 = nn.Conv2d(1, 16, 3, padding=1)# 16@500 30
-        self.conv2 = nn.Conv2d(16, 16, 9, padding=4)# stride=1, padding=3) 32@ 1000 30
-        self.conv3 = nn.Conv2d(16, 32, 9, padding=4)# 64@1000 30
+        self.conv2 = nn.Conv2d(16, 16, 5, padding=2)# stride=1, padding=3) 32@ 1000 30
+        self.conv3 = nn.Conv2d(16, 32, 5, padding=2)# 64@1000 30
+        self.conv4 = nn.Conv2d(32, 64, 5, padding=2)
         #self.norm1 = nn.BatchNorm2d(16)
         #self.norm2 = nn.BatchNorm2d(32)
         #self.norm3 = nn.BatchNorm2d(64)
-        self.fc1 = nn.Linear(32*30*125, 1000)
+        self.fc1 = nn.Linear(64*30*125, 1000)
         self.fc2 = nn.Linear(1000, 1)
     def forward(self,x):
         x = F.relu(self.conv1(x))# 16@500 30
         x = F.max_pool2d(F.relu(self.conv2(x)), (1, 2))# 32@ 250 30
         x = F.max_pool2d(F.relu(self.conv3(x)), (1, 2))# 64@ 125 30
-        
+        x = F.relu(self.conv4(x))
         x = x.view(-1, self.num_flat_features(x))# 64*30*125
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        return x
+        return F.sigmoid(x)
     def num_flat_features(self,x):
         size = x.size()[1:]
         num_features = 1
@@ -86,8 +87,8 @@ if __name__ == "__main__":
         wave = wave.float()
         out = model(wave)
         particleTruth[i] = out.cpu().detach().numpy()
-    particleTruth[particleTruth<=0.5] = 0
-    particleTruth[particleTruth>0.5] = 1
+    particleTruth[particleTruth<0.3] = 0
+    particleTruth[particleTruth>0.7] = 1
     writeSubfile(particleTruth, eventId, outFile)
     print('End write {}'.format(outFile))
     

@@ -6,6 +6,10 @@ all: $(files:%=ab-%.h5)
 	echo "finish make"
 ab-%.h5:
 	python3 dataprepare.py -f $@ -i $(idir) -o $(odir)
+check: $(files:%=$(odir)ab-%.pdf)
+	echo "finish check"
+$(odir)ab-%.pdf: $(odir)ab-%.h5
+	python3 checkData.py $(^) -o $(@)
 merge: $(odir)train.h5
 	echo 'finish merge'
 $(odir)train.h5: $(files:%=$(odir)ab-%.h5)

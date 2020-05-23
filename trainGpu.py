@@ -43,10 +43,6 @@ if __name__=="__main__":
     args = psr.parse_args()
     outFile = args.opt
     trainFiles = args.ipt
-    
-    model = MLP()
-    print("model parameters number:{}".format(np.sum(param.numel() for param in model.parameters())))
-    print(model)
 
     dataOrigin = np.zeros((0,30,waveLength))
     labelOrigin = np.zeros((0))
@@ -78,7 +74,13 @@ if __name__=="__main__":
     test_dataset = TensorDataset(torch.from_numpy(testData).float(), torch.from_numpy(testLabel).float())
     test_loader = DataLoader(dataset=test_dataset, batch_size=batchSize, shuffle=True)
 
-
+    # gpu
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
+    # model to gpu
+    model = MLP().to(device)
+    print("model parameters number:{}".format(np.sum(param.numel() for param in model.parameters())))
+    print(model)
     optimizer = optim.Adam(model.parameters(), lr=0.005)
     criterion = nn.MSELoss()
     best_loss = 10000.
@@ -91,7 +93,8 @@ if __name__=="__main__":
         validnanNum = 0
         running_loss = 0.0
         for i, (data, label) in enumerate(train_loader):
-            data = data.float()
+            data = data.float().to(device)
+            label = label.float().to(device)
             out = model(data)
             loss = criterion(out, label)
             optimizer.zero_grad()
